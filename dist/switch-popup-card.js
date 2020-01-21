@@ -2397,292 +2397,6 @@ LitElement['finalized'] = true;
 LitElement.render = render$1;
 //# sourceMappingURL=lit-element.js.map
 
-function provideHass(element) {
-  if(document.querySelector('hc-main'))
-    return document.querySelector('hc-main').provideHass(element);
-
-  if(document.querySelector('home-assistant'))
-    return document.querySelector("home-assistant").provideHass(element);
-
-  return undefined;
-}
-
-function lovelace_view() {
-  var root = document.querySelector("hc-main");
-  if(root) {
-    root = root && root.shadowRoot;
-    root = root && root.querySelector("hc-lovelace");
-    root = root && root.shadowRoot;
-    root = root && root.querySelector("hui-view");
-    return root;
-  }
-
-  root = document.querySelector("home-assistant");
-  root = root && root.shadowRoot;
-  root = root && root.querySelector("home-assistant-main");
-  root = root && root.shadowRoot;
-  root = root && root.querySelector("app-drawer-layout partial-panel-resolver");
-  root = root && root.shadowRoot || root;
-  root = root && root.querySelector("ha-panel-lovelace");
-  root = root && root.shadowRoot;
-  root = root && root.querySelector("hui-root");
-  root = root && root.shadowRoot;
-  root = root && root.querySelector("ha-app-layout #view");
-  root = root && root.firstElementChild;
-  return root;
-}
-
-function fireEvent(ev, detail, entity=null) {
-  ev = new Event(ev, {
-    bubbles: true,
-    cancelable: false,
-    composed: true,
-  });
-  ev.detail = detail || {};
-  if(entity) {
-    entity.dispatchEvent(ev);
-  } else {
-    var root = lovelace_view();
-    if (root) root.dispatchEvent(ev);
-  }
-}
-
-const LitElement$1 = customElements.get('home-assistant-main')
-  ? Object.getPrototypeOf(customElements.get('home-assistant-main'))
-  : Object.getPrototypeOf(customElements.get('hui-view'));
-
-const html$1 = LitElement$1.prototype.html;
-
-const css$1 = LitElement$1.prototype.css;
-
-const CUSTOM_TYPE_PREFIX = "custom:";
-
-function errorElement(error, origConfig) {
-  const el = document.createElement("hui-error-card");
-  el.setConfig({
-    type: "error",
-    error,
-    origConfig,
-  });
-  return el;
-}
-
-function _createElement(tag, config) {
-  const el = document.createElement(tag);
-  try {
-    el.setConfig(config);
-  } catch (err) {
-    return errorElement(err, config);
-  }
-  return el;
-}
-
-function createLovelaceElement(thing, config) {
-  if(!config || typeof config !== "object" || !config.type)
-    return errorElement(`No ${thing} type configured`, config);
-
-  let tag = config.type;
-  if(tag.startsWith(CUSTOM_TYPE_PREFIX))
-    tag = tag.substr(CUSTOM_TYPE_PREFIX.length);
-  else
-    tag = `hui-${tag}-${thing}`;
-
-  if(customElements.get(tag))
-    return _createElement(tag, config);
-
-  const el = errorElement(`Custom element doesn't exist: ${tag}.`, config);
-  el.style.display = "None";
-
-  const timer = setTimeout(() => {
-    el.style.display = "";
-  }, 2000);
-
-  customElements.whenDefined(tag).then(() => {
-    clearTimeout(timer);
-    fireEvent("ll-rebuild", {}, el);
-  });
-
-  return el;
-}
-
-function createCard(config) {
-  return createLovelaceElement('card', config);
-}
-function createElement(config) {
-  return createLovelaceElement('element', config);
-}
-function createEntityRow(config) {
-  const SPECIAL_TYPES = new Set([
-    "call-service",
-    "divider",
-    "section",
-    "weblink",
-  ]);
-  const DEFAULT_ROWS = {
-    alert: "toggle",
-    automation: "toggle",
-    climate: "climate",
-    cover: "cover",
-    fan: "toggle",
-    group: "group",
-    input_boolean: "toggle",
-    input_number: "input-number",
-    input_select: "input-select",
-    input_text: "input-text",
-    light: "toggle",
-    lock: "lock",
-    media_player: "media-player",
-    remote: "toggle",
-    scene: "scene",
-    script: "script",
-    sensor: "sensor",
-    timer: "timer",
-    switch: "toggle",
-    vacuum: "toggle",
-    water_heater: "climate",
-    input_datetime: "input-datetime",
-  };
-
-  if(!config)
-    return errorElement("Invalid configuration given.", config);
-  if(typeof config === "string")
-    config = {entity: config};
-  if(typeof config !== "object" || (!config.entity && !config.type))
-    return errorElement("Invalid configuration given.", config);
-
-  const type = config.type || "default";
-  if(SPECIAL_TYPES.has(type) || type.startsWith(CUSTOM_TYPE_PREFIX))
-    return createLovelaceElement('row', config);
-
-  const domain = config.entity.split(".", 1)[0];
-  Object.assign(config, {type: DEFAULT_ROWS[domain] || "text"});
-
-  return createLovelaceElement('entity-row', config);
-}
-
-const VERSION = 2;
-
-class ThingMaker extends LitElement$1 {
-  static get version() {
-    return VERSION;
-  }
-
-  static get properties() {
-    return {
-      'noHass': {type: Boolean },
-    };
-  }
-  setConfig(config) {
-    this._config = config;
-    if(!this.el) {
-      this.el = this.create(config);
-      if(this._hass) this.el.hass = this._hass;
-      if(this.noHass) provideHass(this);
-    } else {
-      this.el.setConfig(config);
-    }
-  }
-  set config(config) {
-    this.setConfig(config);
-  }
-  set hass(hass) {
-    this._hass = hass;
-    if(this.el) this.el.hass = hass;
-  }
-
-  createRenderRoot() {
-    return this;
-  }
-  render() {
-    return html$1`${this.el}`;
-  }
-}
-
-
-const redefineElement = function(element, newClass) {
-  // Non-static properties of class
-  const properties = Object.getOwnPropertyDescriptors(newClass.prototype);
-  for(const [k,v] of Object.entries(properties)) {
-    if(k === "constructor") continue;
-    Object.defineProperty(element.prototype, k, v);
-  }
-  // Static properties of class
-  const staticProperties = Object.getOwnPropertyDescriptors(newClass);
-  for(const [k,v] of Object.entries(staticProperties)) {
-    if(k === "prototype") continue;
-    Object.defineProperty(element, k, v);
-  }
-  const superclass = Object.getPrototypeOf(newClass);
-  // Non-static properties of superclass
-  const baseProperties = Object.getOwnPropertyDescriptors(superclass.prototype);
-  for(const [k,v] of Object.entries(baseProperties)) {
-    if(k === "constructor") continue;
-    Object.defineProperty(Object.getPrototypeOf(element).prototype, k, v);
-  }
-  // Static properties of superclassk
-  const staticBaseProperties = Object.getOwnPropertyDescriptors(superclass);
-  for(const [k,v] of Object.entries(staticBaseProperties)) {
-    if(k === "prototype") continue;
-    Object.defineProperty(Object.getPrototypeOf(element), k, v);
-  }
-};
-
-const cardMaker = customElements.get("card-maker");
-if(!cardMaker || !cardMaker.version || cardMaker.version < VERSION) {
-  class CardMaker extends ThingMaker {
-    create(config) {
-      return createCard(config);
-    }
-    getCardSize() {
-      if(this.firstElementChild && this.firstElementChild.getCardSize)
-        return this.firstElementChild.getCardSize();
-      return 1;
-    }
-  }
-
-  if(cardMaker) {
-    redefineElement(cardMaker, CardMaker);
-  } else {
-    customElements.define("card-maker", CardMaker);
-  }
-}
-
-const elementMaker = customElements.get("element-maker");
-if(!elementMaker || !elementMaker.version || elementMaker.version < VERSION) {
-  class ElementMaker extends ThingMaker {
-    create(config) {
-      return createElement(config);
-    }
-  }
-
-  if(elementMaker) {
-    redefineElement(elementMaker, ElementMaker);
-  } else {
-    customElements.define("element-maker", ElementMaker);
-  }
-}
-
-const entityRowMaker = customElements.get("entity-row-maker");
-if(!entityRowMaker || !entityRowMaker.version || entityRowMaker.version < VERSION) {
-  class EntityRowMaker extends ThingMaker {
-    create(config) {
-      return createEntityRow(config);
-    }
-  }
-  if(entityRowMaker) {
-    redefineElement(entityRowMaker, EntityRowMaker);
-  } else {
-    customElements.define("entity-row-maker", EntityRowMaker);
-  }
-}
-
-function closePopUp() {
-  const root = document.querySelector("hc-main") || document.querySelector("home-assistant");
-  const moreInfoEl = root && root._moreInfoEl;
-  if(moreInfoEl)
-    moreInfoEl.close();
-}
-
 class SwitchPopupCard extends LitElement {
     constructor() {
         super();
@@ -2700,9 +2414,8 @@ class SwitchPopupCard extends LitElement {
         var fullscreen = "fullscreen" in this.config ? this.config.fullscreen : true;
         var switchWidth = this.config.switchWidth ? this.config.switchWidth : "180px";
         var icon = this.config.icon ? this.config.icon : '';
-        var activeState;
-        console.log(entities);
         //Check what state is active
+        var activeState;
         for (let i = 0; i < buttons.length; i++) {
             let active = true;
             for (let j in entities) {
@@ -2740,10 +2453,8 @@ class SwitchPopupCard extends LitElement {
     updated() { }
     _getValue(stateObj) {
         var state = stateObj;
-        console.log(state);
         var path = this.config.entity_value_path.split('.');
         for (var pathItem of path) {
-            console.log(pathItem);
             if (state[pathItem]) {
                 state = state[pathItem];
             }
@@ -2751,7 +2462,6 @@ class SwitchPopupCard extends LitElement {
                 state = null;
             }
         }
-        console.log('getValue', state);
         return state;
     }
     _switch(e) {
@@ -2768,15 +2478,17 @@ class SwitchPopupCard extends LitElement {
                         service_data[key] = this.config.buttons[value].value;
                     }
                 }
-                console.log(service_data);
                 this.hass.callService(domain, service, service_data);
             }
         }
     }
     _close(event) {
-        if (event && event.target.className.includes('popup-inner')) {
-            closePopUp();
-        }
+        console.group('close_event');
+        console.log(event);
+        console.groupEnd();
+        // if(event && event.target.className.includes('popup-inner')) {
+        //     closePopUp();
+        // }
     }
     setConfig(config) {
         if (!config.entities) {

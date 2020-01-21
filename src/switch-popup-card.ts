@@ -29,12 +29,9 @@ class SwitchPopupCard extends LitElement {
     var fullscreen = "fullscreen" in this.config ? this.config.fullscreen : true;
     var switchWidth = this.config.switchWidth ? this.config.switchWidth : "180px";
     var icon = this.config.icon ? this.config.icon: '';
-
-    var activeState;
-
-    console.log(entities);
-
+    
     //Check what state is active
+    var activeState;
     for(let i = 0; i < buttons.length;i++) {
       let active = true;
       
@@ -77,17 +74,14 @@ class SwitchPopupCard extends LitElement {
 
   _getValue(stateObj) {
     var state = stateObj;
-    console.log(state);
     var path = this.config.entity_value_path.split('.');
     for(var pathItem of path) {
-      console.log(pathItem);
       if(state[pathItem]) {
         state = state[pathItem];
       } else {
         state = null;
       }
     }
-    console.log('getValue', state);
     return state;
   }
 
@@ -106,18 +100,19 @@ class SwitchPopupCard extends LitElement {
             service_data[key] = this.config.buttons[value].value;
           }
         }
-
-        console.log(service_data);
-        
         this.hass.callService(domain, service, service_data);
       }
     }
   }
 
   _close(event) {
-      if(event && event.target.className.includes('popup-inner')) {
-          closePopUp();
-      }
+      console.group('close_event');
+
+      console.log(event);
+      console.groupEnd();
+      // if(event && event.target.className.includes('popup-inner')) {
+      //     closePopUp();
+      // }
   }
 
   setConfig(config) {
