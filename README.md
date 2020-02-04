@@ -1,7 +1,6 @@
 # Switch popup card (homekit style)
 
-
-Example configuration
+Example configuration light brightness
 ```
 entity: light.beganegrond
 popup:
@@ -44,3 +43,72 @@ popup:
 ```
 
 ![screenshot](screenshot.png "screenshot")
+
+
+Example configuration fan speed
+```
+entity: fan.fan_test
+popup:
+    type: custom:switch-popup-card
+    icon: "mdi-fan"
+    noActiveState: '-'
+    entity_value_path: attributes.speed
+    service: fan.set_speed
+    service_data:
+    entity_id: this
+    speed: value
+    entities:
+    - fan.fan_test
+    buttons:
+    - icon: "mdi:fan"
+        value: 'high'
+        name: "Hoog"
+        color: "#FFF"
+        icon_color: "rgba(255,255,255,1)"
+    - icon: "mdi:fan"
+        value: 'medium'
+        name: "Gemiddeld"
+        color: "#FFF"
+        icon_color: "rgba(255,255,255,1)"
+    - icon: "mdi:fan"
+        value: 'low'
+        name: "Laag"
+        color: "#FFF"
+        icon_color: "rgba(255,255,255,1)"
+    - icon: "mdi:fan-off"
+        value: 'off'
+        name: "Uit"
+```
+
+![screenshot2](screenshot2.png "screenshot2")
+
+
+Example configuration lock
+```
+entity: lock.lock_test
+popup:
+    type: custom:switch-popup-card
+    noActiveState: '-'
+    entity_value_path: state
+    entities:
+    - lock.lock_test
+    buttons:
+    - icon: "mdi:lock-open"
+        value: "unlocked"
+        name: "Open"
+        color: "#FFF"
+        icon_color: "rgba(255,255,255,1)"
+        service: lock.unlock
+        service_data:
+        entity_id: this
+    - icon: "mdi:lock"
+        value: "locked"
+        name: "Dicht"
+        color: "#FFF"
+        icon_color: "rgba(255,255,255,1)"
+        service: lock.lock
+        service_data:
+        entity_id: this
+```
+
+![screenshot3](screenshot3.png "screenshot3")

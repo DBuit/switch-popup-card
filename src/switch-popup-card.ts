@@ -89,8 +89,13 @@ class SwitchPopupCard extends LitElement {
   _switch(e) {
     if(e.target.dataset && e.target.dataset.value) {
       var value = e.target.dataset.value;
-      const [domain, service] = this.config.service.split(".", 2);
-      var service_data = this.config.service_data;
+      if(this.config.service) {
+        var [domain, service] = this.config.service.split(".", 2);
+        var service_data = Object.create(this.config.service_data);
+      } else {
+        var [domain, service] = this.config.buttons[value].service.split(".", 2);
+        var service_data = Object.create(this.config.buttons[value].service_data);
+      }
 
       for(var entity of this.config.entities) {
         for(var key in service_data) {
@@ -106,13 +111,9 @@ class SwitchPopupCard extends LitElement {
   }
 
   _close(event) {
-      console.group('close_event');
-
-      console.log(event);
-      console.groupEnd();
-      // if(event && event.target.className.includes('popup-inner')) {
-      //     closePopUp();
-      // }
+      if(event && event.target.className === 'popup-inner') {
+          closePopUp();
+      }
   }
 
   setConfig(config) {
@@ -126,7 +127,7 @@ class SwitchPopupCard extends LitElement {
   }
 
   getCardSize() {
-    return this.config.entities.length + 1;
+    return 1;
   }
   
   static get styles() {
