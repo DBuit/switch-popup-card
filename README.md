@@ -5,13 +5,13 @@ Example configuration light brightness
 entity: light.beganegrond
 popup:
     type: custom:switch-popup-card
-    icon: "mdi-lightbulb"
+    icon: "mdi:lightbulb"
     noActiveState: '-'
     entity_value_path: attributes.brightness
     service: light.turn_on
     service_data:
-    entity_id: this
-    brightness: value
+      entity_id: this
+      brightness: value
     entities:
     - light.beganegrond
     buttons:
@@ -50,13 +50,13 @@ Example configuration fan speed
 entity: fan.fan_test
 popup:
     type: custom:switch-popup-card
-    icon: "mdi-fan"
+    icon: "mdi:fan"
     noActiveState: '-'
     entity_value_path: attributes.speed
     service: fan.set_speed
     service_data:
-    entity_id: this
-    speed: value
+      entity_id: this
+      speed: value
     entities:
     - fan.fan_test
     buttons:
@@ -100,7 +100,7 @@ popup:
         icon_color: "rgba(255,255,255,1)"
         service: lock.unlock
         service_data:
-        entity_id: this
+          entity_id: this
     - icon: "mdi:lock"
         value: "locked"
         name: "Dicht"
@@ -108,7 +108,7 @@ popup:
         icon_color: "rgba(255,255,255,1)"
         service: lock.lock
         service_data:
-        entity_id: this
+          entity_id: this
 ```
 
 ![screenshot3](screenshot3.png "screenshot3")
