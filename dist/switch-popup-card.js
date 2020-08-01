@@ -2390,23 +2390,69 @@ function hass() {
 
   return undefined;
 }
-function load_lovelace() {
+async function load_lovelace() {
   if(customElements.get("hui-view")) return true;
 
-  const res = document.createElement("partial-panel-resolver");
-  res.hass = hass();
-  if(!res.hass || !res.hass.panels)
-    return false;
-  res.route = {path: "/lovelace/"};
-  res._updateRoutes();
-  try {
-    document.querySelector("home-assistant").appendChild(res);
-  } catch (error) {
-  } finally {
-    document.querySelector("home-assistant").removeChild(res);
+  await customElements.whenDefined("partial-panel-resolver");
+  const ppr = document.createElement("partial-panel-resolver");
+  ppr.hass = {panels: [{
+    url_path: "tmp",
+    "component_name": "lovelace",
+  }]};
+  ppr._updateRoutes();
+  await ppr.routerOptions.routes.tmp.load();
+  if(!customElements.get("ha-panel-lovelace")) return false;
+  const p = document.createElement("ha-panel-lovelace");
+  p.hass = hass();
+  if(p.hass === undefined) {
+    await new Promise(resolve => {
+      window.addEventListener('connection-status', (ev) => {
+        console.log(ev);
+        resolve();
+      }, {once: true});
+    });
+    p.hass = hass();
   }
-  if(customElements.get("hui-view")) return true;
-  return false;
+  p.panel = {config: {mode: null}};
+  p._fetchConfig();
+  return true;
+}
+
+async function _selectTree(root, path, all=false) {
+  let el = root;
+  if(typeof(path) === "string") {
+    path = path.split(/(\$| )/);
+  }
+  for(const [i, p] of path.entries()) {
+    if(!p.trim().length) continue;
+    if(!el) return null;
+    if(el.localName && el.localName.includes("-"))
+      await customElements.whenDefined(el.localName);
+    if(el.updateComplete)
+      await el.updateComplete;
+    if(p === "$")
+      if(all && i == path.length-1)
+        el = [el.shadowRoot];
+      else
+        el = el.shadowRoot;
+    else
+      if(all && i == path.length-1)
+        el = el.querySelectorAll(p);
+      else
+        el = el.querySelector(p);
+  }
+  return el;
+}
+
+async function selectTree(root, path, all=false, timeout=10000) {
+  return Promise.race([
+    _selectTree(root, path, all),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeout))
+  ]).catch((err) => {
+    if(!err.message || err.message !== "timeout")
+      throw(err);
+    return null;
+  });
 }
 
 let helpers = window.cardHelpers;
@@ -2432,11 +2478,12 @@ const helperPromise = new Promise(async (resolve, reject) => {
   }
 });
 
-function closePopUp() {
-  const root = document.querySelector("hc-main") || document.querySelector("home-assistant");
-  const moreInfoEl = root && root._moreInfoEl;
-  if(moreInfoEl)
-    moreInfoEl.close();
+async function closePopUp() {
+  const root = document.querySelector("home-assistant") || document.querySelector("hc-root");
+  const el = await selectTree(root, "$ card-tools-popup");
+
+  if(el)
+    el.closeDialog();
 }
 
 class SwitchPopupCard extends LitElement {
