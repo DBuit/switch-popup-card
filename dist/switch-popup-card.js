@@ -15,6 +15,7 @@ const directives = new WeakMap();
 const isDirective = (o) => {
     return typeof o === 'function' && directives.has(o);
 };
+//# sourceMappingURL=directive.js.map
 
 /**
  * @license
@@ -46,6 +47,7 @@ const removeNodes = (container, start, end = null) => {
         start = n;
     }
 };
+//# sourceMappingURL=dom.js.map
 
 /**
  * @license
@@ -69,6 +71,7 @@ const noChange = {};
  * A sentinel value that signals a NodePart to fully clear its content.
  */
 const nothing = {};
+//# sourceMappingURL=part.js.map
 
 /**
  * @license
@@ -282,6 +285,7 @@ const createMarker = () => document.createComment('');
  *    * (') then any non-(')
  */
 const lastAttributeNameRegex = /([ \x09\x0a\x0c\x0d])([^\0-\x1F\x7F-\x9F "'>=/]+)([ \x09\x0a\x0c\x0d]*=[ \x09\x0a\x0c\x0d]*(?:[^ \x09\x0a\x0c\x0d"'`<>=]*|"[^"]*|'[^']*))$/;
+//# sourceMappingURL=template.js.map
 
 /**
  * @license
@@ -414,6 +418,7 @@ class TemplateInstance {
         return fragment;
     }
 }
+//# sourceMappingURL=template-instance.js.map
 
 /**
  * @license
@@ -502,6 +507,7 @@ class TemplateResult {
         return template;
     }
 }
+//# sourceMappingURL=template-result.js.map
 
 /**
  * @license
@@ -941,6 +947,7 @@ const getOptions = (o) => o &&
     (eventOptionsSupported ?
         { capture: o.capture, passive: o.passive, once: o.once } :
         o.capture);
+//# sourceMappingURL=parts.js.map
 
 /**
  * @license
@@ -992,6 +999,7 @@ class DefaultTemplateProcessor {
     }
 }
 const defaultTemplateProcessor = new DefaultTemplateProcessor();
+//# sourceMappingURL=default-template-processor.js.map
 
 /**
  * @license
@@ -1039,6 +1047,7 @@ function templateFactory(result) {
     return template;
 }
 const templateCaches = new Map();
+//# sourceMappingURL=template-factory.js.map
 
 /**
  * @license
@@ -1079,6 +1088,7 @@ const render = (result, container, options) => {
     part.setValue(result);
     part.commit();
 };
+//# sourceMappingURL=render.js.map
 
 /**
  * @license
@@ -1102,6 +1112,7 @@ const render = (result, container, options) => {
  * render to and update a container.
  */
 const html = (strings, ...values) => new TemplateResult(strings, values, 'html', defaultTemplateProcessor);
+//# sourceMappingURL=lit-html.js.map
 
 /**
  * @license
@@ -1226,6 +1237,7 @@ function insertNodeIntoTemplate(template, node, refNode = null) {
         }
     }
 }
+//# sourceMappingURL=modify-template.js.map
 
 /**
  * @license
@@ -1495,6 +1507,7 @@ const render$1 = (result, container, options) => {
         window.ShadyCSS.styleElement(container.host);
     }
 };
+//# sourceMappingURL=shady-render.js.map
 
 /**
  * @license
@@ -2120,6 +2133,7 @@ _a = finalized;
  * Marks class as having finished creating properties.
  */
 UpdatingElement[_a] = true;
+//# sourceMappingURL=updating-element.js.map
 
 /**
 @license
@@ -2183,6 +2197,7 @@ const css = (strings, ...values) => {
     const cssText = values.reduce((acc, v, idx) => acc + textFromCSSResult(v) + strings[idx + 1], strings[0]);
     return new CSSResult(cssText, constructionToken);
 };
+//# sourceMappingURL=css-tag.js.map
 
 /**
  * @license
@@ -2380,6 +2395,7 @@ LitElement['finalized'] = true;
  * @nocollapse
  */
 LitElement.render = render$1;
+//# sourceMappingURL=lit-element.js.map
 
 function hass() {
   if(document.querySelector('hc-main'))
@@ -2390,6 +2406,41 @@ function hass() {
 
   return undefined;
 }
+function provideHass(element) {
+  if(document.querySelector('hc-main'))
+    return document.querySelector('hc-main').provideHass(element);
+
+  if(document.querySelector('home-assistant'))
+    return document.querySelector("home-assistant").provideHass(element);
+
+  return undefined;
+}
+function lovelace_view() {
+  var root = document.querySelector("hc-main");
+  if(root) {
+    root = root && root.shadowRoot;
+    root = root && root.querySelector("hc-lovelace");
+    root = root && root.shadowRoot;
+    root = root && root.querySelector("hui-view") || root.querySelector("hui-panel-view");
+    return root;
+  }
+
+  root = document.querySelector("home-assistant");
+  root = root && root.shadowRoot;
+  root = root && root.querySelector("home-assistant-main");
+  root = root && root.shadowRoot;
+  root = root && root.querySelector("app-drawer-layout partial-panel-resolver");
+  root = root && root.shadowRoot || root;
+  root = root && root.querySelector("ha-panel-lovelace");
+  root = root && root.shadowRoot;
+  root = root && root.querySelector("hui-root");
+  root = root && root.shadowRoot;
+  root = root && root.querySelector("ha-app-layout");
+  root = root && root.querySelector("#view");
+  root = root && root.firstElementChild;
+  return root;
+}
+
 async function load_lovelace() {
   if(customElements.get("hui-view")) return true;
 
@@ -2455,6 +2506,23 @@ async function selectTree(root, path, all=false, timeout=10000) {
   });
 }
 
+function fireEvent(ev, detail, entity=null) {
+  ev = new Event(ev, {
+    bubbles: true,
+    cancelable: false,
+    composed: true,
+  });
+  ev.detail = detail || {};
+  if(entity) {
+    entity.dispatchEvent(ev);
+  } else {
+    var root = lovelace_view();
+    if (root) root.dispatchEvent(ev);
+  }
+}
+
+const CUSTOM_TYPE_PREFIX = "custom:";
+
 let helpers = window.cardHelpers;
 const helperPromise = new Promise(async (resolve, reject) => {
   if(helpers) resolve();
@@ -2478,6 +2546,71 @@ const helperPromise = new Promise(async (resolve, reject) => {
   }
 });
 
+function errorElement(error, origConfig) {
+  const cfg = {
+    type: "error",
+    error,
+    origConfig,
+  };
+  const el = document.createElement("hui-error-card");
+  customElements.whenDefined("hui-error-card").then(() => {
+    const newel = document.createElement("hui-error-card");
+    newel.setConfig(cfg);
+    if(el.parentElement)
+      el.parentElement.replaceChild(newel, el);
+  });
+  helperPromise.then(() => {
+    fireEvent("ll-rebuild", {}, el);
+  });
+  return el;
+}
+
+function _createElement(tag, config) {
+  let el = document.createElement(tag);
+  try {
+    el.setConfig(JSON.parse(JSON.stringify(config)));
+  } catch (err) {
+    el = errorElement(err, config);
+  }
+  helperPromise.then(() => {
+    fireEvent("ll-rebuild", {}, el);
+  });
+  return el;
+}
+
+function createLovelaceElement(thing, config) {
+  if(!config || typeof config !== "object" || !config.type)
+    return errorElement(`No ${thing} type configured`, config);
+
+  let tag = config.type;
+  if(tag.startsWith(CUSTOM_TYPE_PREFIX))
+    tag = tag.substr(CUSTOM_TYPE_PREFIX.length);
+  else
+    tag = `hui-${tag}-${thing}`;
+
+  if(customElements.get(tag))
+    return _createElement(tag, config);
+
+  const el = errorElement(`Custom element doesn't exist: ${tag}.`, config);
+  el.style.display = "None";
+
+  const timer = setTimeout(() => {
+    el.style.display = "";
+  }, 2000);
+
+  customElements.whenDefined(tag).then(() => {
+    clearTimeout(timer);
+    fireEvent("ll-rebuild", {}, el);
+  });
+
+  return el;
+}
+
+function createCard(config) {
+  if(helpers) return helpers.createCardElement(config);
+  return createLovelaceElement('card', config);
+}
+
 async function closePopUp() {
   const root = document.querySelector("home-assistant") || document.querySelector("hc-root");
   const el = await selectTree(root, "$ card-tools-popup");
@@ -2489,6 +2622,9 @@ async function closePopUp() {
 class SwitchPopupCard extends LitElement {
     constructor() {
         super();
+        this.settings = false;
+        this.settingsCustomCard = false;
+        this.settingsPosition = "bottom";
     }
     static get properties() {
         return {
@@ -2503,6 +2639,24 @@ class SwitchPopupCard extends LitElement {
         var fullscreen = "fullscreen" in this.config ? this.config.fullscreen : true;
         var switchWidth = this.config.switchWidth ? this.config.switchWidth : "180px";
         var icon = this.config.icon ? this.config.icon : '';
+        this.settings = "settings" in this.config ? true : false;
+        this.settingsCustomCard = "settingsCard" in this.config ? true : false;
+        this.settingsPosition = "settingsPosition" in this.config ? this.config.settingsPosition : "bottom";
+        if (this.settingsCustomCard && this.config.settingsCard.cardOptions) {
+            if (this.config.settingsCard.cardOptions.entity && this.config.settingsCard.cardOptions.entity == 'this') {
+                this.config.settingsCard.cardOptions.entity = entities[0];
+            }
+            else if (this.config.settingsCard.cardOptions.entity_id && this.config.settingsCard.cardOptions.entity_id == 'this') {
+                this.config.settingsCard.cardOptions.entity_id = entities[0];
+            }
+            else if (this.config.settingsCard.cardOptions.entities) {
+                for (let key in this.config.settingsCard.cardOptions.entities) {
+                    if (this.config.settingsCard.cardOptions.entities[key] == 'this') {
+                        this.config.settingsCard.cardOptions.entities[key] = entities[0];
+                    }
+                }
+            }
+        }
         //Check what state is active
         var activeState;
         for (let i = 0; i < buttons.length; i++) {
@@ -2521,7 +2675,7 @@ class SwitchPopupCard extends LitElement {
         var count = -1;
         return html `
       <div class="${fullscreen === true ? 'popup-wrapper' : ''}">
-        <div class="popup-inner" @click="${e => this._close(e)}">
+        <div id="popup" class="popup-inner" @click="${e => this._close(e)}">
       
           <div class="icon on${fullscreen === true ? ' fullscreen' : ''}">
             <ha-icon icon="${buttons[activeState] ? buttons[activeState].icon : icon}"></ha-icon>
@@ -2535,11 +2689,67 @@ class SwitchPopupCard extends LitElement {
             return html `<li @click="${e => this._switch(e)}" data-value="${count}" class="${count == activeState ? 'active' : ''}"><ha-icon icon="${button.icon}"></ha-icon>${button.name}</li>`;
         })}
           </ul>
+
+          ${this.settings ? html `<button class="settings-btn ${this.settingsPosition}${fullscreen === true ? ' fullscreen' : ''}" @click="${() => this._openSettings()}">${this.config.settings.openButton ? this.config.settings.openButton : 'Settings'}</button>` : html ``}
         </div>
+        ${this.settings ? html `
+          <div id="settings" class="settings-inner" @click="${e => this._close(e)}">
+            ${this.settingsCustomCard ? html `
+              <div class="custom-card" data-card="${this.config.settingsCard.type}" data-options="${JSON.stringify(this.config.settingsCard.cardOptions)}" data-style="${this.config.settingsCard.cardStyle ? this.config.settingsCard.cardStyle : ''}">
+              </div>
+            ` : html `
+                <p style="color:#F00;">Set settingsCustomCard to render a lovelace card here!</p>
+            `}
+            <button class="settings-btn ${this.settingsPosition}${fullscreen === true ? ' fullscreen' : ''}" @click="${() => this._closeSettings()}">${this.config.settings.closeButton ? this.config.settings.closeButton : 'Close'}</button>
+          </div>
+        ` : html ``}
       </div>
     `;
     }
     updated() { }
+    firstUpdated() {
+        if (this.settings && !this.settingsCustomCard) {
+            const mic = this.shadowRoot.querySelector("more-info-controls").shadowRoot;
+            mic.removeChild(mic.querySelector("app-toolbar"));
+        }
+        else if (this.settings && this.settingsCustomCard) {
+            this.shadowRoot.querySelectorAll(".custom-card").forEach(customCard => {
+                var card = {
+                    type: customCard.dataset.card
+                };
+                card = Object.assign({}, card, JSON.parse(customCard.dataset.options));
+                const cardElement = createCard(card);
+                customCard.appendChild(cardElement);
+                provideHass(cardElement);
+                let style = "";
+                if (customCard.dataset.style) {
+                    style = customCard.dataset.style;
+                }
+                if (style != "") {
+                    let itterations = 0;
+                    let interval = setInterval(function () {
+                        if (cardElement && cardElement.shadowRoot) {
+                            window.clearInterval(interval);
+                            var styleElement = document.createElement('style');
+                            styleElement.innerHTML = style;
+                            cardElement.shadowRoot.appendChild(styleElement);
+                        }
+                        else if (++itterations === 10) {
+                            window.clearInterval(interval);
+                        }
+                    }, 100);
+                }
+            });
+        }
+    }
+    _openSettings() {
+        this.shadowRoot.getElementById('popup').classList.add("off");
+        this.shadowRoot.getElementById('settings').classList.add("on");
+    }
+    _closeSettings() {
+        this.shadowRoot.getElementById('settings').classList.remove("on");
+        this.shadowRoot.getElementById('popup').classList.remove("off");
+    }
     _getValue(stateObj) {
         var state = stateObj;
         var path = this.config.entity_value_path.split('.');
@@ -2615,6 +2825,9 @@ class SwitchPopupCard extends LitElement {
           justify-content: center;
           flex-direction: column;
         }
+        .popup-inner.off {
+          display:none;
+        }
         .fullscreen {
           margin-top:-64px;
         }
@@ -2687,6 +2900,41 @@ class SwitchPopupCard extends LitElement {
         }
         .multi-switch li:hover {
           background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        #settings {
+          display:none;
+        }
+        .settings-inner {
+          height: 100%;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+        }
+        #settings.on {
+          display:flex;
+        }
+        .settings-btn {
+          position:absolute;
+          right:30px;
+          background-color: #7f8082;
+          color: #FFF;
+          border: 0;
+          padding: 5px 20px;
+          border-radius: 10px;
+          font-weight: 500;
+          cursor: pointer;
+        }
+        .settings-btn.bottom {
+          bottom:15px;
+        }
+        .settings-btn.bottom.fullscreen {
+          margin:0;
+        }
+        .settings-btn.top {
+          top: 25px;
         }
         
     `;

@@ -1,12 +1,15 @@
 import { LitElement, html, css, svg } from 'lit-element';
-import { classMap } from "lit-html/directives/class-map";
 import { closePopUp } from 'card-tools/src/popup';
-import { computeStateDisplay, computeStateName } from 'custom-card-helpers';
+import { provideHass } from "card-tools/src/hass";
+import { createCard } from "card-tools/src/lovelace-element.js";
 
 class SwitchPopupCard extends LitElement {
   config: any;
   hass: any;
   shadowRoot: any;
+  settings = false;
+  settingsCustomCard = false;
+  settingsPosition = "bottom";
 
   static get properties() {
     return {
@@ -29,6 +32,23 @@ class SwitchPopupCard extends LitElement {
     var fullscreen = "fullscreen" in this.config ? this.config.fullscreen : true;
     var switchWidth = this.config.switchWidth ? this.config.switchWidth : "180px";
     var icon = this.config.icon ? this.config.icon: '';
+
+    this.settings = "settings" in this.config ? true : false;
+    this.settingsCustomCard = "settingsCard" in this.config ? true : false;
+    this.settingsPosition = "settingsPosition" in this.config ? this.config.settingsPosition : "bottom";
+    if(this.settingsCustomCard && this.config.settingsCard.cardOptions) {
+      if(this.config.settingsCard.cardOptions.entity && this.config.settingsCard.cardOptions.entity == 'this') {
+        this.config.settingsCard.cardOptions.entity = entities[0];
+      } else if(this.config.settingsCard.cardOptions.entity_id && this.config.settingsCard.cardOptions.entity_id == 'this') {
+        this.config.settingsCard.cardOptions.entity_id = entities[0];
+      } else if(this.config.settingsCard.cardOptions.entities) {
+        for(let key in this.config.settingsCard.cardOptions.entities) {
+          if(this.config.settingsCard.cardOptions.entities[key] == 'this') {
+            this.config.settingsCard.cardOptions.entities[key] = entities[0];
+          }
+        }
+      }
+    }
     
     //Check what state is active
     var activeState;
@@ -51,7 +71,7 @@ class SwitchPopupCard extends LitElement {
     var count = -1;
     return html`
       <div class="${fullscreen === true ? 'popup-wrapper':''}">
-        <div class="popup-inner" @click="${e => this._close(e)}">
+        <div id="popup" class="popup-inner" @click="${e => this._close(e)}">
       
           <div class="icon on${fullscreen === true ? ' fullscreen':''}">
             <ha-icon icon="${buttons[activeState] ? buttons[activeState].icon: icon}"></ha-icon>
@@ -65,12 +85,68 @@ class SwitchPopupCard extends LitElement {
               return html`<li @click="${e => this._switch(e)}" data-value="${count}" class="${count == activeState ? 'active' : ''}"><ha-icon icon="${button.icon}"></ha-icon>${button.name}</li>`
             })}
           </ul>
+
+          ${this.settings ? html`<button class="settings-btn ${this.settingsPosition}${fullscreen === true ? ' fullscreen':''}" @click="${() => this._openSettings()}">${this.config.settings.openButton ? this.config.settings.openButton:'Settings'}</button>`:html``}
         </div>
+        ${this.settings ? html`
+          <div id="settings" class="settings-inner" @click="${e => this._close(e)}">
+            ${this.settingsCustomCard ? html`
+              <div class="custom-card" data-card="${this.config.settingsCard.type}" data-options="${JSON.stringify(this.config.settingsCard.cardOptions)}" data-style="${this.config.settingsCard.cardStyle ? this.config.settingsCard.cardStyle : ''}">
+              </div>
+            `:html`
+                <p style="color:#F00;">Set settingsCustomCard to render a lovelace card here!</p>
+            `}
+            <button class="settings-btn ${this.settingsPosition}${fullscreen === true ? ' fullscreen':''}" @click="${() => this._closeSettings()}">${this.config.settings.closeButton ? this.config.settings.closeButton:'Close'}</button>
+          </div>
+        `:html``}
       </div>
     `;
   }
   
   updated() { }
+
+  firstUpdated() {
+    if(this.settings && !this.settingsCustomCard) {
+    const mic = this.shadowRoot.querySelector("more-info-controls").shadowRoot;
+    mic.removeChild(mic.querySelector("app-toolbar"));
+    } else if(this.settings && this.settingsCustomCard) {
+      this.shadowRoot.querySelectorAll(".custom-card").forEach(customCard => {
+        var card = {
+          type: customCard.dataset.card
+        };
+        card = Object.assign({}, card, JSON.parse(customCard.dataset.options));
+        const cardElement = createCard(card);
+        customCard.appendChild(cardElement);
+        provideHass(cardElement);
+        let style = "";
+        if(customCard.dataset.style) {
+          style = customCard.dataset.style;
+        }
+        if(style!= "") {
+          let itterations = 0;
+          let interval = setInterval(function() {
+              if(cardElement && cardElement.shadowRoot) {
+                  window.clearInterval(interval);
+                  var styleElement = document.createElement('style');
+                  styleElement.innerHTML = style;
+                  cardElement.shadowRoot.appendChild(styleElement);
+              } else if(++itterations === 10) {
+                  window.clearInterval(interval);
+              }
+          }, 100);
+        }
+      });
+    }
+  }
+
+  _openSettings() {
+    this.shadowRoot.getElementById('popup').classList.add("off");
+    this.shadowRoot.getElementById('settings').classList.add("on");
+  }
+  _closeSettings() {
+    this.shadowRoot.getElementById('settings').classList.remove("on");
+    this.shadowRoot.getElementById('popup').classList.remove("off");
+  }
 
   _getValue(stateObj) {
     var state = stateObj;
@@ -151,6 +227,9 @@ class SwitchPopupCard extends LitElement {
           justify-content: center;
           flex-direction: column;
         }
+        .popup-inner.off {
+          display:none;
+        }
         .fullscreen {
           margin-top:-64px;
         }
@@ -223,6 +302,41 @@ class SwitchPopupCard extends LitElement {
         }
         .multi-switch li:hover {
           background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        #settings {
+          display:none;
+        }
+        .settings-inner {
+          height: 100%;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+        }
+        #settings.on {
+          display:flex;
+        }
+        .settings-btn {
+          position:absolute;
+          right:30px;
+          background-color: #7f8082;
+          color: #FFF;
+          border: 0;
+          padding: 5px 20px;
+          border-radius: 10px;
+          font-weight: 500;
+          cursor: pointer;
+        }
+        .settings-btn.bottom {
+          bottom:15px;
+        }
+        .settings-btn.bottom.fullscreen {
+          margin:0;
+        }
+        .settings-btn.top {
+          top: 25px;
         }
         
     `;
