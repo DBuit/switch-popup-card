@@ -165,12 +165,13 @@ class SwitchPopupCard extends LitElement {
   _switch(e) {
     if(e.target.dataset && e.target.dataset.value) {
       var value = e.target.dataset.value;
+      var service_data: any;
       if(this.config.service) {
         var [domain, service] = this.config.service.split(".", 2);
-        var service_data = Object.create(this.config.service_data);
+        service_data =  Object.assign({}, this.config.service_data);
       } else {
         var [domain, service] = this.config.buttons[value].service.split(".", 2);
-        var service_data = Object.create(this.config.buttons[value].service_data);
+        service_data = Object.assign({}, this.config.buttons[value].service_data);
       }
 
       for(var entity of this.config.entities) {
