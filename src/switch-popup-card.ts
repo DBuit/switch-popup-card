@@ -1,5 +1,5 @@
 import { LitElement, html, css, svg } from 'lit-element';
-import { closePopUp } from 'card-tools/src/popup';
+import { fireEvent } from "card-tools/src/event";
 import { provideHass } from "card-tools/src/hass";
 import { createCard } from "card-tools/src/lovelace-element.js";
 
@@ -189,7 +189,15 @@ class SwitchPopupCard extends LitElement {
 
   _close(event) {
       if(event && event.target.className === 'popup-inner') {
-          closePopUp();
+        const action = {
+            browser_mod: {
+                service: "browser_mod.close_popup",
+                data: {
+                  browser_id: 'THIS'
+              }
+            }
+        }
+        fireEvent("ll-custom", action);
       }
   }
 
